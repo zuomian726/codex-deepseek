@@ -1,6 +1,14 @@
-# Codex 接入 DeepSeek V4：Mac 小白安装版
+# Codex DeepSeek for Mac：Mac 小白安装版
 
-这个项目帮你把 DeepSeek V4 接入 Codex。
+这个项目是 **Mac 专用版**，帮你把 DeepSeek V4 接入 Codex。
+
+适用范围：
+
+- macOS
+- Codex Desktop for Mac
+- Mac 终端里的 `codex` 命令
+
+暂不支持 Windows / Linux。如果你是 Windows 用户，请不要直接照这个教程操作。
 
 支持两种用法：
 
@@ -34,7 +42,7 @@ DeepSeek API Key 格式类似：
 
 ## 第一步：安装
 
-打开终端，复制执行：
+打开 Mac 的“终端”，复制执行：
 
 ```bash
 cd ~

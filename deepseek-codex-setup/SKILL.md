@@ -1,19 +1,19 @@
 ---
 name: deepseek-codex-setup
-description: Configure or repair Codex CLI/Desktop to use DeepSeek V4 through a local Responses API proxy. Use when the user asks to connect DeepSeek API to Codex, migrate the same DeepSeek Codex setup to another Mac, fix `codex -p deepseek`, create a reusable DeepSeek setup, or troubleshoot `/responses` 404, `Reconnecting...`, or `stream disconnected` errors with DeepSeek-backed Codex.
+description: Configure or repair Codex CLI/Desktop for Mac to use DeepSeek V4 through a local Responses API proxy. Use when the user asks to connect DeepSeek API to Codex on macOS, migrate the same DeepSeek Codex setup to another Mac, fix `codex -p deepseek`, create a reusable DeepSeek setup for Mac, or troubleshoot `/responses` 404, `Reconnecting...`, or `stream disconnected` errors with DeepSeek-backed Codex.
 ---
 
-# DeepSeek Codex Setup
+# DeepSeek Codex Setup for Mac
 
 ## Purpose
 
-Use this skill to install, repair, test, or explain the local DeepSeek V4 bridge for Codex. Codex expects a Responses API provider, while DeepSeek V4 exposes Chat Completions, so this setup runs a local proxy:
+Use this skill to install, repair, test, or explain the local DeepSeek V4 bridge for Codex on macOS. Codex expects a Responses API provider, while DeepSeek V4 exposes Chat Completions, so this setup runs a local proxy:
 
 ```text
 Codex -> http://127.0.0.1:8766/responses -> https://api.deepseek.com/chat/completions
 ```
 
-When helping a beginner, lead with the README quick-start flow: install Codex Desktop, get a DeepSeek API key, clone the repository, run `install.sh`, then test `codex exec -p deepseek --skip-git-repo-check "只回复 OK"`. Avoid explaining protocol details unless the user asks.
+When helping a beginner, lead with the README quick-start flow for Mac: install Codex Desktop for Mac, get a DeepSeek API key, clone the repository, run `install.sh`, then test `codex exec -p deepseek --skip-git-repo-check "只回复 OK"`. Avoid explaining protocol details unless the user asks. Do not present this as a Windows/Linux guide.
 
 ## Install Or Repair
 
