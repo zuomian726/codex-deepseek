@@ -1,151 +1,343 @@
-# DeepSeek Codex Setup
+# Codex 使用 DeepSeek V4 小白安装包
 
-把 DeepSeek V4 接入 Codex 的可复用 skill。
+这个项目的作用：让你的 **Codex CLI** 可以使用 **DeepSeek V4**。
 
-这个项目提供一个本地桥接服务，让 Codex 使用 `Responses API` 形态访问 DeepSeek 的 `Chat Completions` API。
+你只需要准备一个 DeepSeek API Key，然后复制几条命令即可。
 
-```text
-Codex -> http://127.0.0.1:8766/responses -> https://api.deepseek.com/chat/completions
-```
+## 先看结论
 
-## 适用场景
-
-- 想在 Codex CLI 中使用 DeepSeek V4。
-- 想把同一套 DeepSeek Codex 配置迁移到多台 Mac。
-- 遇到 DeepSeek 直连 Codex 时的 `/responses 404` 问题。
-- 想用 `codex -p deepseek` 独立启用 DeepSeek，不影响默认 OpenAI Codex。
-
-## 注意事项
-
-这是本地桥接方案，不是 Codex 官方原生 DeepSeek 支持。
-
-已验证能力：
-
-- 普通文本回复。
-- 基础命令工具调用。
-
-不保证完整兼容：
-
-- 复杂 MCP 工具链。
-- 多模态输入。
-- Web search。
-- Codex Desktop 全局默认模型切换。
-
-建议默认继续使用官方 OpenAI Codex，需要 DeepSeek 时使用：
-
-```bash
-codex -p deepseek
-```
-
-## 安装
-
-### 1. 复制 skill
-
-把 `deepseek-codex-setup` 目录放到目标机器：
-
-```bash
-mkdir -p ~/.codex/skills
-cp -R deepseek-codex-setup ~/.codex/skills/
-```
-
-如果你是从压缩包解压：
-
-```bash
-mkdir -p ~/.codex/skills
-tar -xzf deepseek-codex-setup-skill.tar.gz -C ~/.codex/skills
-```
-
-### 2. 安装配置
-
-```bash
-~/.codex/skills/deepseek-codex-setup/scripts/install.sh --api-key <your-deepseek-api-key>
-```
-
-也可以用环境变量：
-
-```bash
-DEEPSEEK_API_KEY=<your-deepseek-api-key> ~/.codex/skills/deepseek-codex-setup/scripts/install.sh
-```
-
-安装脚本会写入：
-
-```text
-~/.codex/.env
-~/.codex/deepseek.config.toml
-~/.codex/deepseek-responses-proxy/server.mjs
-~/.codex/deepseek-responses-proxy/start.sh
-~/.codex/deepseek-responses-proxy/stop.sh
-```
-
-同时会尝试创建：
-
-```text
-/usr/local/bin/codex -> /Applications/Codex.app/Contents/Resources/codex
-```
-
-## 使用
-
-每次使用 DeepSeek profile 前，先启动桥接服务：
+安装完成后，你以后这样使用：
 
 ```bash
 ~/.codex/deepseek-responses-proxy/start.sh
-```
-
-进入项目目录后启动 Codex：
-
-```bash
 codex -p deepseek
 ```
 
-一次性测试：
+测试是否成功：
 
 ```bash
 codex exec -p deepseek --skip-git-repo-check "只回复 OK"
 ```
 
-停止桥接服务：
+看到 `OK` 就说明成功。
+
+## 适合谁
+
+适合：
+
+- 想用 Codex，但希望模型走 DeepSeek V4。
+- 想降低一部分 AI 使用成本。
+- 想在多台 Mac 上复用同一套配置。
+
+不适合：
+
+- 完全不想打开终端的人。
+- 想在 Codex 桌面端界面里直接点选 DeepSeek 的人。
+- 需要完整 MCP、多模态、web search 等高级能力的人。
+
+## 准备工作
+
+### 1. 安装 Codex Desktop
+
+先确认你的 Mac 已经安装 Codex Desktop。
+
+Codex 程序通常在这里：
+
+```text
+/Applications/Codex.app
+```
+
+### 2. 准备 DeepSeek API Key
+
+去 DeepSeek 平台创建 API Key。
+
+拿到的 key 类似：
+
+```text
+<your-deepseek-api-key>
+```
+
+注意：不要把真实 API Key 发到 GitHub、微信群、论坛或截图里。
+
+## 小白安装步骤
+
+### 第 1 步：打开终端
+
+在 Mac 上打开：
+
+```text
+启动台 -> 其他 -> 终端
+```
+
+或者用 Spotlight 搜索：
+
+```text
+Terminal
+```
+
+### 第 2 步：下载项目
+
+复制下面命令到终端：
 
 ```bash
-~/.codex/deepseek-responses-proxy/stop.sh
+cd ~
+git clone https://github.com/zuomian726/codex-deepseek.git
+cd codex-deepseek
 ```
 
-## 验证
+如果提示 `git: command not found`，说明电脑还没有 Git，需要先安装 Git 或 Xcode Command Line Tools。
 
-检查 Codex CLI：
+### 第 3 步：安装配置
+
+把下面命令里的 `<your-deepseek-api-key>` 替换成你自己的 DeepSeek API Key：
 
 ```bash
-codex --version
+./deepseek-codex-setup/scripts/install.sh --api-key <your-deepseek-api-key>
 ```
 
-检查桥接服务：
+例如格式是这样：
 
 ```bash
-curl http://127.0.0.1:8766/health
+./deepseek-codex-setup/scripts/install.sh --api-key 你的真实key
 ```
 
-正常返回：
+注意：不要把真实 key 提交到 GitHub。
 
-```json
-{"ok":true,"provider":"deepseek","base_url":"https://api.deepseek.com"}
-```
+### 第 4 步：测试
 
-测试 DeepSeek 文本回复：
+复制执行：
 
 ```bash
 codex exec -p deepseek --skip-git-repo-check "只回复 OK"
 ```
 
-测试工具调用：
+如果看到：
+
+```text
+OK
+```
+
+说明安装成功。
+
+### 第 5 步：正式使用
+
+进入你的项目目录，例如：
 
 ```bash
-codex exec -p deepseek --skip-git-repo-check "请用命令查看当前目录，并告诉我有哪些文件夹"
+cd ~/Code/your-project
+```
+
+启动 DeepSeek 桥接服务：
+
+```bash
+~/.codex/deepseek-responses-proxy/start.sh
+```
+
+用 DeepSeek 启动 Codex：
+
+```bash
+codex -p deepseek
+```
+
+不用的时候，可以停止：
+
+```bash
+~/.codex/deepseek-responses-proxy/stop.sh
+```
+
+## 每次使用要做什么
+
+每次开机后，如果你想用 DeepSeek 版 Codex，建议先执行：
+
+```bash
+~/.codex/deepseek-responses-proxy/start.sh
+```
+
+然后进入项目目录：
+
+```bash
+cd ~/Code/your-project
+```
+
+再启动：
+
+```bash
+codex -p deepseek
+```
+
+## 配置文件在哪里
+
+安装脚本会自动创建这些文件。
+
+| 文件 | 作用 |
+| --- | --- |
+| `~/.codex/.env` | 保存 DeepSeek API Key |
+| `~/.codex/deepseek.config.toml` | Codex 的 DeepSeek profile 配置 |
+| `~/.codex/deepseek-responses-proxy/server.mjs` | 本地桥接服务 |
+| `~/.codex/deepseek-responses-proxy/start.sh` | 启动桥接服务 |
+| `~/.codex/deepseek-responses-proxy/stop.sh` | 停止桥接服务 |
+
+## 想修改配置，改哪里
+
+### 修改 API Key
+
+打开这个文件：
+
+```bash
+open ~/.codex/.env
+```
+
+里面是：
+
+```env
+DEEPSEEK_API_KEY=<your-deepseek-api-key>
+```
+
+把等号后面的内容换成新的 key。
+
+修改后重启桥接服务：
+
+```bash
+~/.codex/deepseek-responses-proxy/stop.sh
+~/.codex/deepseek-responses-proxy/start.sh
+```
+
+### 修改 DeepSeek 模型
+
+打开：
+
+```bash
+open ~/.codex/deepseek.config.toml
+```
+
+找到：
+
+```toml
+model = "deepseek-v4-pro"
+```
+
+如果你想换模型，就改这一行。
+
+示例：
+
+```toml
+model = "deepseek-v4-flash"
+```
+
+修改后重新启动 Codex：
+
+```bash
+codex -p deepseek
+```
+
+### 修改本地端口
+
+默认端口是：
+
+```text
+8766
+```
+
+一般不需要改。
+
+如果端口冲突，需要同时改两个地方。
+
+第一个文件：
+
+```bash
+open ~/.codex/deepseek.config.toml
+```
+
+把：
+
+```toml
+base_url = "http://127.0.0.1:8766"
+```
+
+改成：
+
+```toml
+base_url = "http://127.0.0.1:新的端口"
+```
+
+第二个文件：
+
+```bash
+open ~/.codex/deepseek-responses-proxy/start.sh
+```
+
+找到：
+
+```bash
+DEEPSEEK_PROXY_PORT="8766"
+```
+
+改成同一个新端口。
+
+然后重启：
+
+```bash
+~/.codex/deepseek-responses-proxy/stop.sh
+~/.codex/deepseek-responses-proxy/start.sh
+```
+
+### 修改 DeepSeek 官方 API 地址
+
+一般不需要改。
+
+如果 DeepSeek 后续更换 API 地址，改这个文件：
+
+```bash
+open ~/.codex/deepseek-responses-proxy/start.sh
+```
+
+在启动命令前增加或修改：
+
+```bash
+DEEPSEEK_BASE_URL="https://api.deepseek.com"
+```
+
+普通用户不要改这个。
+
+## 为什么不是直接填 DeepSeek 地址
+
+Codex 当前需要请求：
+
+```text
+/responses
+```
+
+DeepSeek 当前提供的是：
+
+```text
+/chat/completions
+```
+
+如果直接让 Codex 请求 DeepSeek：
+
+```text
+https://api.deepseek.com/responses
+```
+
+会报：
+
+```text
+404 Not Found
+```
+
+所以这个项目加了一个本地桥接：
+
+```text
+Codex -> 本地桥接 -> DeepSeek
 ```
 
 ## 常见问题
 
-### zsh: command not found: codex
+### 1. zsh: command not found: codex
 
-创建 Codex CLI 软链接：
+说明终端找不到 Codex 命令。
+
+执行：
 
 ```bash
 ln -sf /Applications/Codex.app/Contents/Resources/codex /usr/local/bin/codex
@@ -153,92 +345,135 @@ hash -r
 codex --version
 ```
 
-### ERROR: Reconnecting... 1/5
+如果能看到版本号，就好了。
 
-通常是本地桥接服务没启动或已经退出。
+### 2. ERROR: Reconnecting... 1/5
+
+通常是桥接服务没启动。
+
+先检查：
 
 ```bash
 curl http://127.0.0.1:8766/health
 ```
 
-如果失败，重启：
+如果失败，执行：
+
+```bash
+~/.codex/deepseek-responses-proxy/start.sh
+```
+
+再测试：
+
+```bash
+codex exec -p deepseek --skip-git-repo-check "只回复 OK"
+```
+
+### 3. stream disconnected before completion
+
+先重启桥接：
 
 ```bash
 ~/.codex/deepseek-responses-proxy/stop.sh
 ~/.codex/deepseek-responses-proxy/start.sh
 ```
 
-### DeepSeek /responses 404
+再试：
 
-不要让 Codex 直接请求 DeepSeek 官方域名的 `/responses`。
+```bash
+codex exec -p deepseek --skip-git-repo-check "只回复 OK"
+```
 
-正确配置是：
+如果还不行，检查日志：
+
+```bash
+sed -n '1,200p' ~/.codex/deepseek-responses-proxy/deepseek-proxy.log
+```
+
+### 4. DeepSeek /responses 404
+
+说明你可能把 Codex 直接指向了 DeepSeek 官方 API。
+
+检查：
+
+```bash
+open ~/.codex/deepseek.config.toml
+```
+
+正确应该是：
 
 ```toml
 base_url = "http://127.0.0.1:8766"
 wire_api = "responses"
 ```
 
-## 隐私和安全
+不是：
 
-不要提交任何真实密钥。
-
-公开仓库里不应该出现：
-
-- `DEEPSEEK_API_KEY=<real-api-key>`
-- `~/.codex/.env`
-- `auth.json`
-- `*.log`
-- `*.pid`
-- `*.sqlite`
-- 本机用户名路径或绝对家目录路径
-- 私有仓库地址、邮箱、Apple ID、服务器 IP、数据库密码
-
-本项目的公开文档只使用通用路径：
-
-```text
-~/.codex
-/Applications/Codex.app
-/usr/local/bin/codex
+```toml
+base_url = "https://api.deepseek.com"
 ```
 
-发布到 GitHub 前建议再做一次全文搜索，重点检查真实 API Key、本机用户名路径、邮箱、服务器地址、数据库密码、运行日志和本地状态数据库。真实隐私信息必须删除后再提交。
+## 桌面端能用吗
 
-## 目录结构
+建议先不要把 Codex 桌面端默认切到 DeepSeek。
 
-```text
-deepseek-codex-setup/
-  SKILL.md
-  agents/
-    openai.yaml
-  scripts/
-    install.sh
-    server.mjs
+原因：
+
+- 桌面端没有明显的 `-p deepseek` 切换入口。
+- 如果桥接服务没启动，桌面端可能直接连不上模型。
+- 当前方案主要为 Codex CLI 准备。
+
+推荐用法：
+
+```bash
+codex -p deepseek
 ```
 
 ## 卸载
 
-停止桥接服务：
+停止桥接：
 
 ```bash
 ~/.codex/deepseek-responses-proxy/stop.sh
 ```
 
-删除安装产物：
+删除配置：
 
 ```bash
 rm -rf ~/.codex/deepseek-responses-proxy
 rm -f ~/.codex/deepseek.config.toml
 ```
 
-如需删除 API Key，请编辑：
+如果要删除 API Key：
+
+```bash
+open ~/.codex/.env
+```
+
+删除这一行：
+
+```env
+DEEPSEEK_API_KEY=<your-deepseek-api-key>
+```
+
+## 隐私提醒
+
+不要把真实 API Key 上传到 GitHub。
+
+不要上传这些文件：
 
 ```text
 ~/.codex/.env
+*.log
+*.pid
+*.sqlite
+auth.json
 ```
 
-删除其中的：
+这个仓库只应该包含：
 
-```env
-DEEPSEEK_API_KEY=...
+```text
+README.md
+.gitignore
+deepseek-codex-setup/
 ```

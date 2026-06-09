@@ -13,6 +13,8 @@ Use this skill to install, repair, test, or explain the local DeepSeek V4 bridge
 Codex -> http://127.0.0.1:8766/responses -> https://api.deepseek.com/chat/completions
 ```
 
+When helping a beginner, lead with the README quick-start flow: install Codex Desktop, get a DeepSeek API key, clone the repository, run `install.sh`, then test `codex exec -p deepseek --skip-git-repo-check "只回复 OK"`. Avoid explaining protocol details unless the user asks.
+
 ## Install Or Repair
 
 Use the bundled installer unless the user only wants an explanation.
