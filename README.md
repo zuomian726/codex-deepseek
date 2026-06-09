@@ -1,16 +1,30 @@
 # Codex 使用 DeepSeek V4 小白安装包
 
-这个项目的作用：让你的 **Codex CLI** 可以使用 **DeepSeek V4**。
+这个项目的作用：让你的 **Codex CLI** 和 **Codex 桌面端** 可以使用 **DeepSeek V4**。
 
 你只需要准备一个 DeepSeek API Key，然后复制几条命令即可。
 
 ## 先看结论
 
-安装完成后，你以后这样使用：
+推荐用法是终端 CLI：
 
 ```bash
 ~/.codex/deepseek-responses-proxy/start.sh
 codex -p deepseek
+```
+
+桌面端也可以用，但需要先切换桌面端配置：
+
+```bash
+~/.codex/deepseek-responses-proxy/desktop-use-deepseek.sh
+```
+
+然后 **完全退出 Codex 桌面端，再重新打开 Codex 桌面端**。
+
+想恢复桌面端默认配置：
+
+```bash
+~/.codex/deepseek-responses-proxy/desktop-use-default.sh
 ```
 
 测试是否成功：
@@ -28,11 +42,12 @@ codex exec -p deepseek --skip-git-repo-check "只回复 OK"
 - 想用 Codex，但希望模型走 DeepSeek V4。
 - 想降低一部分 AI 使用成本。
 - 想在多台 Mac 上复用同一套配置。
+- 想让 Codex 桌面端临时切到 DeepSeek。
 
 不适合：
 
 - 完全不想打开终端的人。
-- 想在 Codex 桌面端界面里直接点选 DeepSeek 的人。
+- 想在 Codex 桌面端界面里直接点选 DeepSeek 的人。当前不是点选切换，而是通过脚本切换配置。
 - 需要完整 MCP、多模态、web search 等高级能力的人。
 
 ## 准备工作
@@ -121,6 +136,8 @@ OK
 
 ### 第 5 步：正式使用
 
+如果你使用终端版 Codex，按这里做。
+
 进入你的项目目录，例如：
 
 ```bash
@@ -143,6 +160,107 @@ codex -p deepseek
 
 ```bash
 ~/.codex/deepseek-responses-proxy/stop.sh
+```
+
+如果你想使用 **Codex 桌面端**，继续看下一节。
+
+## 重点：桌面端使用方法
+
+Codex 桌面端目前没有明显的 `-p deepseek` 入口，所以不能像终端这样启动：
+
+```bash
+codex -p deepseek
+```
+
+桌面端要使用 DeepSeek，需要临时修改 Codex 的全局配置。这个项目已经提供了两个脚本，不需要你手动改配置。
+
+### 桌面端切换到 DeepSeek
+
+先确保你已经完成上面的安装步骤。
+
+然后执行：
+
+```bash
+~/.codex/deepseek-responses-proxy/desktop-use-deepseek.sh
+```
+
+这个脚本会自动做三件事：
+
+- 启动本地 DeepSeek 桥接服务。
+- 备份当前 `~/.codex/config.toml`。
+- 把 Codex 桌面端默认模型切到 DeepSeek。
+
+执行完成后，必须做这一步：
+
+```text
+完全退出 Codex 桌面端，然后重新打开 Codex 桌面端
+```
+
+注意：只是关闭窗口不一定够，建议在菜单栏退出 Codex，或者按 `Command + Q`。
+
+### 桌面端恢复默认 OpenAI
+
+如果你想让桌面端恢复默认模型，执行：
+
+```bash
+~/.codex/deepseek-responses-proxy/desktop-use-default.sh
+```
+
+执行完成后，同样需要：
+
+```text
+完全退出 Codex 桌面端，然后重新打开 Codex 桌面端
+```
+
+### 桌面端每次开机后要注意什么
+
+如果桌面端已经切到 DeepSeek，每次开机后都要先启动桥接服务：
+
+```bash
+~/.codex/deepseek-responses-proxy/start.sh
+```
+
+否则桌面端可能会一直连接失败。
+
+### 桌面端配置改了哪里
+
+桌面端切换脚本会修改：
+
+```text
+~/.codex/config.toml
+```
+
+并把原文件备份到：
+
+```text
+~/.codex/config-backups/
+```
+
+如果你想手动查看：
+
+```bash
+open ~/.codex/config.toml
+```
+
+DeepSeek 桌面端配置会类似：
+
+```toml
+model = "deepseek-v4-pro"
+model_provider = "deepseek_proxy"
+
+[model_providers.deepseek_proxy]
+name = "DeepSeek v4 via local Responses proxy"
+base_url = "http://127.0.0.1:8766"
+env_key = "DEEPSEEK_API_KEY"
+wire_api = "responses"
+supports_websockets = false
+```
+
+小白用户不建议手动改这里，优先使用脚本：
+
+```bash
+~/.codex/deepseek-responses-proxy/desktop-use-deepseek.sh
+~/.codex/deepseek-responses-proxy/desktop-use-default.sh
 ```
 
 ## 每次使用要做什么
@@ -176,6 +294,10 @@ codex -p deepseek
 | `~/.codex/deepseek-responses-proxy/server.mjs` | 本地桥接服务 |
 | `~/.codex/deepseek-responses-proxy/start.sh` | 启动桥接服务 |
 | `~/.codex/deepseek-responses-proxy/stop.sh` | 停止桥接服务 |
+| `~/.codex/deepseek-responses-proxy/desktop-use-deepseek.sh` | 让 Codex 桌面端使用 DeepSeek |
+| `~/.codex/deepseek-responses-proxy/desktop-use-default.sh` | 让 Codex 桌面端恢复默认配置 |
+| `~/.codex/config.toml` | Codex 桌面端会读取的全局配置 |
+| `~/.codex/config-backups/` | 桌面端切换前的配置备份 |
 
 ## 想修改配置，改哪里
 
@@ -229,6 +351,14 @@ model = "deepseek-v4-flash"
 ```bash
 codex -p deepseek
 ```
+
+如果你用的是桌面端，还要重新执行桌面端切换脚本：
+
+```bash
+~/.codex/deepseek-responses-proxy/desktop-use-deepseek.sh
+```
+
+然后完全退出并重新打开 Codex 桌面端。
 
 ### 修改本地端口
 
@@ -413,21 +543,29 @@ wire_api = "responses"
 base_url = "https://api.deepseek.com"
 ```
 
-## 桌面端能用吗
+### 5. 桌面端打开后一直连接失败
 
-建议先不要把 Codex 桌面端默认切到 DeepSeek。
-
-原因：
-
-- 桌面端没有明显的 `-p deepseek` 切换入口。
-- 如果桥接服务没启动，桌面端可能直接连不上模型。
-- 当前方案主要为 Codex CLI 准备。
-
-推荐用法：
+先确认桥接服务是否启动：
 
 ```bash
-codex -p deepseek
+curl http://127.0.0.1:8766/health
 ```
+
+如果失败，执行：
+
+```bash
+~/.codex/deepseek-responses-proxy/start.sh
+```
+
+然后完全退出并重新打开 Codex 桌面端。
+
+如果仍然不行，先恢复默认 OpenAI：
+
+```bash
+~/.codex/deepseek-responses-proxy/desktop-use-default.sh
+```
+
+再完全退出并重新打开 Codex 桌面端。
 
 ## 卸载
 
@@ -442,6 +580,12 @@ codex -p deepseek
 ```bash
 rm -rf ~/.codex/deepseek-responses-proxy
 rm -f ~/.codex/deepseek.config.toml
+```
+
+如果你曾经让桌面端切到 DeepSeek，先恢复默认：
+
+```bash
+~/.codex/deepseek-responses-proxy/desktop-use-default.sh
 ```
 
 如果要删除 API Key：

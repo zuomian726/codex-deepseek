@@ -99,8 +99,9 @@ cat > "$ROOT/start.sh" <<SH
 #!/bin/zsh
 set -euo pipefail
 
-ROOT="\$HOME/.codex/deepseek-responses-proxy"
-ENV_FILE="\$HOME/.codex/.env"
+CODEX_HOME="\${CODEX_HOME:-\$HOME/.codex}"
+ROOT="\$CODEX_HOME/deepseek-responses-proxy"
+ENV_FILE="\$CODEX_HOME/.env"
 PID_FILE="\$ROOT/deepseek-proxy.pid"
 LOG_FILE="\$ROOT/deepseek-proxy.log"
 
@@ -132,7 +133,8 @@ cat > "$ROOT/stop.sh" <<'SH'
 #!/bin/zsh
 set -euo pipefail
 
-ROOT="$HOME/.codex/deepseek-responses-proxy"
+CODEX_HOME="${CODEX_HOME:-$HOME/.codex}"
+ROOT="$CODEX_HOME/deepseek-responses-proxy"
 PID_FILE="$ROOT/deepseek-proxy.pid"
 
 if [[ ! -f "$PID_FILE" ]]; then
@@ -151,7 +153,117 @@ fi
 rm -f "$PID_FILE"
 SH
 
-chmod 700 "$ROOT/start.sh" "$ROOT/stop.sh"
+cat > "$ROOT/desktop-use-deepseek.sh" <<SH
+#!/bin/zsh
+set -euo pipefail
+
+CODEX_HOME="\${CODEX_HOME:-\$HOME/.codex}"
+CONFIG_FILE="\$CODEX_HOME/config.toml"
+BACKUP_DIR="\$CODEX_HOME/config-backups"
+START_SCRIPT="\$CODEX_HOME/deepseek-responses-proxy/start.sh"
+
+mkdir -p "\$BACKUP_DIR"
+"\$START_SCRIPT"
+
+if [[ -f "\$CONFIG_FILE" ]]; then
+  BACKUP_FILE="\$BACKUP_DIR/config.toml.before-deepseek-desktop.\$(date +%Y%m%d-%H%M%S)"
+  cp "\$CONFIG_FILE" "\$BACKUP_FILE"
+  echo "Backup: \$BACKUP_FILE"
+else
+  touch "\$CONFIG_FILE"
+fi
+
+ruby - "\$CONFIG_FILE" <<'RUBY'
+path = ARGV.fetch(0)
+lines = File.exist?(path) ? File.readlines(path, chomp: true) : []
+out = []
+table = nil
+skip_deepseek_provider = false
+
+lines.each do |line|
+  if line =~ /^\\s*\\[([^\\]]+)\\]\\s*$/
+    table = \$1
+    skip_deepseek_provider = (table == "model_providers.deepseek_proxy")
+    next if skip_deepseek_provider
+  end
+
+  next if skip_deepseek_provider
+  next if table.nil? && line =~ /^\\s*(model|model_provider)\\s*=/
+
+  out << line
+end
+
+out << "" unless out.empty? || out.last == ""
+out << 'model = "$MODEL"'
+out << 'model_provider = "deepseek_proxy"'
+out << ""
+out << "[model_providers.deepseek_proxy]"
+out << 'name = "DeepSeek v4 via local Responses proxy"'
+out << 'base_url = "http://127.0.0.1:$PORT"'
+out << 'env_key = "DEEPSEEK_API_KEY"'
+out << 'wire_api = "responses"'
+out << 'supports_websockets = false'
+
+File.write(path, out.join("\\n") + "\\n")
+RUBY
+
+echo
+echo "Codex Desktop is now configured to use DeepSeek."
+echo "Important: fully quit Codex Desktop and open it again."
+echo "To restore default config later:"
+echo "  ~/.codex/deepseek-responses-proxy/desktop-use-default.sh"
+SH
+
+cat > "$ROOT/desktop-use-default.sh" <<'SH'
+#!/bin/zsh
+set -euo pipefail
+
+CODEX_HOME="${CODEX_HOME:-$HOME/.codex}"
+CONFIG_FILE="$CODEX_HOME/config.toml"
+BACKUP_DIR="$CODEX_HOME/config-backups"
+
+LATEST_BACKUP="$(find "$BACKUP_DIR" -maxdepth 1 -type f -name 'config.toml.before-deepseek-desktop.*' -print 2>/dev/null | sort -r | head -n 1 || true)"
+
+if [[ -n "$LATEST_BACKUP" ]]; then
+  cp "$LATEST_BACKUP" "$CONFIG_FILE"
+  echo "Restored: $LATEST_BACKUP"
+  echo "Important: fully quit Codex Desktop and open it again."
+  exit 0
+fi
+
+if [[ ! -f "$CONFIG_FILE" ]]; then
+  echo "No config.toml found. Nothing to restore."
+  exit 0
+fi
+
+ruby - "$CONFIG_FILE" <<'RUBY'
+path = ARGV.fetch(0)
+lines = File.readlines(path, chomp: true)
+out = []
+table = nil
+skip_deepseek_provider = false
+
+lines.each do |line|
+  if line =~ /^\s*\[([^\]]+)\]\s*$/
+    table = $1
+    skip_deepseek_provider = (table == "model_providers.deepseek_proxy")
+    next if skip_deepseek_provider
+  end
+
+  next if skip_deepseek_provider
+  next if table.nil? && line =~ /^\s*(model|model_provider)\s*=/
+
+  out << line
+end
+
+File.write(path, out.join("\n") + "\n")
+RUBY
+
+echo "Removed DeepSeek Desktop config block."
+echo "Important: fully quit Codex Desktop and open it again."
+SH
+
+chmod 700 "$ROOT/start.sh" "$ROOT/stop.sh" "$ROOT/desktop-use-deepseek.sh" "$ROOT/desktop-use-default.sh"
 ln -sf "$CODEX_BIN" /usr/local/bin/codex 2>/dev/null || true
 
 "$ROOT/start.sh"
@@ -161,3 +273,7 @@ echo "Test with:"
 echo "  codex exec -p deepseek --skip-git-repo-check \"只回复 OK\""
 echo "Interactive use:"
 echo "  codex -p deepseek"
+echo "Desktop use:"
+echo "  ~/.codex/deepseek-responses-proxy/desktop-use-deepseek.sh"
+echo "Desktop restore:"
+echo "  ~/.codex/deepseek-responses-proxy/desktop-use-default.sh"

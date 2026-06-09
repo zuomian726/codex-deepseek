@@ -36,6 +36,8 @@ The installer writes:
 - `~/.codex/deepseek-responses-proxy/server.mjs`
 - `~/.codex/deepseek-responses-proxy/start.sh`
 - `~/.codex/deepseek-responses-proxy/stop.sh`
+- `~/.codex/deepseek-responses-proxy/desktop-use-deepseek.sh`
+- `~/.codex/deepseek-responses-proxy/desktop-use-default.sh`
 - `/usr/local/bin/codex` symlink to the Codex desktop binary when possible
 
 Never print the API key in user-facing output. Mask it in diagnostics.
@@ -116,9 +118,14 @@ wire_api = "responses"
 
 ## Desktop Guidance
 
-Prefer terminal usage with `codex -p deepseek`. Codex Desktop does not expose the same obvious profile switch. Do not make DeepSeek the global desktop default unless the user accepts the risk that Desktop will fail when the local proxy is not running.
+Prefer terminal usage with `codex -p deepseek`, but support Desktop when the user explicitly asks. Codex Desktop does not expose the same obvious profile switch, so use the generated scripts instead of asking beginners to hand-edit TOML:
 
-If the user asks for Desktop switching, propose separate backup/restore scripts rather than permanently editing `~/.codex/config.toml`.
+```bash
+~/.codex/deepseek-responses-proxy/desktop-use-deepseek.sh
+~/.codex/deepseek-responses-proxy/desktop-use-default.sh
+```
+
+Explain that `desktop-use-deepseek.sh` starts the proxy, backs up `~/.codex/config.toml`, and writes DeepSeek as the global model provider. Tell the user to fully quit and reopen Codex Desktop after switching. If Desktop fails to connect, start the proxy or run `desktop-use-default.sh` to restore the previous config.
 
 ## Migration To Another Mac
 
