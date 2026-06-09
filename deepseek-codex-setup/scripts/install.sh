@@ -160,23 +160,30 @@ set -euo pipefail
 CODEX_HOME="\${CODEX_HOME:-\$HOME/.codex}"
 CONFIG_FILE="\$CODEX_HOME/config.toml"
 BACKUP_DIR="\$CODEX_HOME/config-backups"
+ORIGINAL_BACKUP="\$BACKUP_DIR/config.toml.before-deepseek-desktop.original"
 START_SCRIPT="\$CODEX_HOME/deepseek-responses-proxy/start.sh"
 
 mkdir -p "\$BACKUP_DIR"
 "\$START_SCRIPT"
 
 if [[ -f "\$CONFIG_FILE" ]]; then
+  if [[ ! -f "\$ORIGINAL_BACKUP" ]]; then
+    cp "\$CONFIG_FILE" "\$ORIGINAL_BACKUP"
+    echo "Original backup: \$ORIGINAL_BACKUP"
+  fi
   BACKUP_FILE="\$BACKUP_DIR/config.toml.before-deepseek-desktop.\$(date +%Y%m%d-%H%M%S)"
   cp "\$CONFIG_FILE" "\$BACKUP_FILE"
   echo "Backup: \$BACKUP_FILE"
 else
   touch "\$CONFIG_FILE"
+  cp "\$CONFIG_FILE" "\$ORIGINAL_BACKUP"
+  echo "Original backup: \$ORIGINAL_BACKUP"
 fi
 
 ruby - "\$CONFIG_FILE" <<'RUBY'
 path = ARGV.fetch(0)
 lines = File.exist?(path) ? File.readlines(path, chomp: true) : []
-out = []
+filtered = []
 table = nil
 skip_deepseek_provider = false
 
@@ -189,14 +196,24 @@ lines.each do |line|
 
   next if skip_deepseek_provider
   next if table.nil? && line =~ /^\\s*(model|model_provider)\\s*=/
+  next if line == 'model = "$MODEL"'
+  next if line == 'model_provider = "deepseek_proxy"'
 
-  out << line
+  filtered << line
 end
 
+first_table_index = filtered.find_index { |line| line =~ /^\\s*\\[/ } || filtered.length
+before_tables = filtered[0...first_table_index]
+after_tables = filtered[first_table_index..] || []
+
+out = []
+out.concat(before_tables)
 out << "" unless out.empty? || out.last == ""
 out << 'model = "$MODEL"'
 out << 'model_provider = "deepseek_proxy"'
 out << ""
+out.concat(after_tables)
+out << "" unless out.empty? || out.last == ""
 out << "[model_providers.deepseek_proxy]"
 out << 'name = "DeepSeek v4 via local Responses proxy"'
 out << 'base_url = "http://127.0.0.1:$PORT"'
@@ -204,7 +221,7 @@ out << 'env_key = "DEEPSEEK_API_KEY"'
 out << 'wire_api = "responses"'
 out << 'supports_websockets = false'
 
-File.write(path, out.join("\\n") + "\\n")
+File.write(path, out.join("\\n").gsub(/\\n{3,}/, "\\n\\n") + "\\n")
 RUBY
 
 echo
@@ -221,12 +238,11 @@ set -euo pipefail
 CODEX_HOME="${CODEX_HOME:-$HOME/.codex}"
 CONFIG_FILE="$CODEX_HOME/config.toml"
 BACKUP_DIR="$CODEX_HOME/config-backups"
+ORIGINAL_BACKUP="$BACKUP_DIR/config.toml.before-deepseek-desktop.original"
 
-LATEST_BACKUP="$(find "$BACKUP_DIR" -maxdepth 1 -type f -name 'config.toml.before-deepseek-desktop.*' -print 2>/dev/null | sort -r | head -n 1 || true)"
-
-if [[ -n "$LATEST_BACKUP" ]]; then
-  cp "$LATEST_BACKUP" "$CONFIG_FILE"
-  echo "Restored: $LATEST_BACKUP"
+if [[ -f "$ORIGINAL_BACKUP" ]]; then
+  cp "$ORIGINAL_BACKUP" "$CONFIG_FILE"
+  echo "Restored: $ORIGINAL_BACKUP"
   echo "Important: fully quit Codex Desktop and open it again."
   exit 0
 fi
@@ -252,11 +268,13 @@ lines.each do |line|
 
   next if skip_deepseek_provider
   next if table.nil? && line =~ /^\s*(model|model_provider)\s*=/
+  next if line =~ /^\s*model\s*=\s*"deepseek-v4-pro"\s*$/
+  next if line == 'model_provider = "deepseek_proxy"'
 
   out << line
 end
 
-File.write(path, out.join("\n") + "\n")
+File.write(path, out.join("\n").gsub(/\n{3,}/, "\n\n") + "\n")
 RUBY
 
 echo "Removed DeepSeek Desktop config block."

@@ -126,6 +126,8 @@ codex -p deepseek
 ~/.codex/deepseek-responses-proxy/desktop-use-default.sh
 ```
 
+这个脚本会恢复第一次切换 DeepSeek 前保存的原始 `~/.codex/config.toml`。
+
 然后同样：
 
 ```text

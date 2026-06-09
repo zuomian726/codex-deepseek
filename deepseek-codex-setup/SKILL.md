@@ -125,7 +125,7 @@ Prefer terminal usage with `codex -p deepseek`, but support Desktop when the use
 ~/.codex/deepseek-responses-proxy/desktop-use-default.sh
 ```
 
-Explain that `desktop-use-deepseek.sh` starts the proxy, backs up `~/.codex/config.toml`, and writes DeepSeek as the global model provider. Tell the user to fully quit and reopen Codex Desktop after switching. If Desktop fails to connect, start the proxy or run `desktop-use-default.sh` to restore the previous config.
+Explain that `desktop-use-deepseek.sh` starts the proxy, creates a one-time original backup of `~/.codex/config.toml`, and writes DeepSeek as the global model provider. Tell the user to fully quit and reopen Codex Desktop after switching. If Desktop fails to connect, start the proxy or run `desktop-use-default.sh` to restore the original config from before the first Desktop switch.
 
 ## Migration To Another Mac
 
