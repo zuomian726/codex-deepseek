@@ -1,0 +1,7 @@
+interface:
+  display_name: "DeepSeek Codex Setup"
+  short_description: "Set up DeepSeek V4 for Codex"
+  default_prompt: "Use $deepseek-codex-setup to configure this Mac so Codex can use DeepSeek V4 through the local proxy."
+
+policy:
+  allow_implicit_invocation: true

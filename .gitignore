@@ -1,0 +1,26 @@
+# Secrets
+.env
+*.env
+auth.json
+*.key
+*.pem
+
+# Runtime files
+*.log
+*.pid
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+
+# macOS
+.DS_Store
+
+# Codex local state
+.codex-global-state.json
+logs_*.sqlite*
+state_*.sqlite*
+goals_*.sqlite*
+memories_*.sqlite*
+shell_snapshots/
+sessions/
+archived_sessions/
